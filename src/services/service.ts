@@ -1,5 +1,5 @@
-import { GentlemanState, SourceOfTruthInitiate } from "../models";
+import { GentlemanState, IndexState, SourceOfTruthInitiate } from "../models";
 
-export const createStore = (SourceOfTruth: SourceOfTruthInitiate[]) => {
-  return new GentlemanState(SourceOfTruth);
+export const createStore = (SourceOfTruth: SourceOfTruthInitiate<IndexState>[]) => {
+  return new GentlemanState<IndexState>(SourceOfTruth);
 };

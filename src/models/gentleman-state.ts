@@ -1,11 +1,11 @@
 import { checkIfConditionMet } from "../utilities";
-import { SourceOfTruth, SourceOfTruthInitiate } from "./source-of-truth";
+import { IndexState, SourceOfTruth, SourceOfTruthInitiate } from "./source-of-truth";
 import { StateObject } from "./state-object";
 
-export class GentlemanState {
-  private observerArray: SourceOfTruth = new Map();
+export class GentlemanState<T> {
+  private observerArray: SourceOfTruth<T> = new Map();
 
-  constructor(sourceOfTruthKeys: SourceOfTruthInitiate[]) {
+  constructor(sourceOfTruthKeys: SourceOfTruthInitiate<T>[]) {
     sourceOfTruthKeys.forEach((k) => {
       const { state } = k;
       this.createObservable(k.key, state);
@@ -18,8 +18,8 @@ export class GentlemanState {
    * @return StateObject
    */
   private static checkIfFound(
-    gentlemanObject: StateObject | undefined
-  ): StateObject {
+    gentlemanObject: StateObject<[]> | undefined
+  ): StateObject<[]> {
     const condition = () => {
       return { met: !!gentlemanObject, value: gentlemanObject };
     };
@@ -35,7 +35,7 @@ export class GentlemanState {
    * @param state: any
    * @return void
    */
-  createNewSourceOfTruth(key: string, state: any): void {
+  createNewSourceOfTruth<K extends keyof T>(key: K, state: T[K]): void {
     this.createObservable(key, state);
   }
 
@@ -45,11 +45,11 @@ export class GentlemanState {
    * @param state - the state of the observable, the object that represents what the observable is going to contain
    * @return void
    */
-  private createObservable(key: string, state: any): void {
+  private createObservable<K extends keyof T>(key: K, state: T[K]): void {
     const found = this.observerArray.has(key);
     if (found) {
       console.log(
-        `the key : ${key}, already exists as an entity so it will be ignored`
+        `the key : ${String(key)}, already exists as an entity so it will be ignored`
       );
     } else {
       const gentlemanObject = new StateObject(state);
@@ -62,7 +62,7 @@ export class GentlemanState {
    * @param key - the key to be used to represent the observable item inside the array
    * @return StateObject
    */
-  getEntity(key: string): StateObject {
+  getEntity(key: string): StateObject<[T]> {
     const observableArrayItem = GentlemanState.checkIfFound(
       this.observerArray.get(key)
     );

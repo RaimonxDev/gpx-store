@@ -1,15 +1,13 @@
 import { BehaviorSubject, Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { checkIfConditionMet } from "../utilities";
-import { TypeWithKey } from "./type-with-key";
 
-type State = TypeWithKey<any>;
 
-export class StateObject {
-  private state: State;
-  readonly observableSubject: BehaviorSubject<State>;
+export class StateObject<T extends { [key: string]: any }>{
+  private state: T;
+  readonly observableSubject: BehaviorSubject<T>;
 
-  constructor(state: State) {
+  constructor(state: T) {
     this.state = state;
     this.observableSubject = new BehaviorSubject(state);
   }
@@ -18,7 +16,7 @@ export class StateObject {
    * @desc returns the observable that contains the state for async operations - it listens for changes
    * @return Observable<State>
    */
-  getObservable(): Observable<State> {
+  getObservable(): Observable<T> {
     return this.observableSubject.asObservable();
   }
 
@@ -34,7 +32,7 @@ export class StateObject {
    * @desc returns the value of the state at the time of the call
    * @return State
    */
-  getStateSnapshot(): State {
+  getStateSnapshot(): T {
     return { ...this.state };
   }
 
@@ -43,7 +41,7 @@ export class StateObject {
    * @param property - the name of the requested property
    * @return any
    */
-  getPropertyFromState(property: string): any {
+  getPropertyFromState<K extends keyof T>(property: K): T[K] {
     return this.state[property];
   }
 
@@ -52,7 +50,7 @@ export class StateObject {
    * @param property - the name of the requested property
    * @return Observable<any>
    */
-  getPropertyFromObservable(property: string): Observable<any> {
+  getPropertyFromObservable<K extends keyof T>(property: K): Observable<T[K]> {
     return this.getObservable().pipe(
       map((s) => this.checkIfPropertyExists(s, property))
     );
@@ -65,9 +63,9 @@ export class StateObject {
    * @param emit - if true it will trigger an async event
    * @return void
    */
-  setObservableValues(
-    value: any,
-    property: string | null = null,
+  setObservableValues<K extends keyof T>(
+    value: T[K],
+    property: K | null = null,
     emit = true
   ): void {
     this.setStateValues(value, property);
@@ -82,12 +80,15 @@ export class StateObject {
    * @param property - the name of the requested property, if no property it will try to patch the values into the state
    * @return void
    */
-  private setStateValues(value: any, property: string | null): void {
+  private setStateValues<K extends keyof T>(
+    value: T[K],
+    property: K | null
+  ): void {
     if (
       property &&
       this.checkIfPropertyExists(this.state, property) !== undefined
     ) {
-      (this.state as TypeWithKey<any>)[property] = value;
+      this.state[property] = value;
     } else {
       this.state = {
         ...this.state,
@@ -101,7 +102,7 @@ export class StateObject {
    * @return void
    */
   resetState(): void {
-    (this.state as TypeWithKey<any>) = {};
+    this.state = {} as T;
   }
 
   /**
@@ -110,13 +111,13 @@ export class StateObject {
    * @param property - the selected property
    * @return any
    */
-  private checkIfPropertyExists(state: any, property: string): any {
+  private checkIfPropertyExists<K extends keyof T>(state: T, property: K): T[K] {
     const condition = () => {
-      return { met: state.hasOwnProperty(property), value: state[property] };
+      return { met: property in state, value: state[property] };
     };
     return checkIfConditionMet(
       () => condition(),
-      "Selected property not found ! check if the key is correct and exists"
+      `Selected property "${String(property)}" not found in state! Check if the key is correct and exists.`
     );
   }
 }
